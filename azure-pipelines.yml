@@ -1,0 +1,50 @@
+trigger:
+  branches:
+    include:
+      - main  # 你想要触发构建的分支
+
+pool:
+  vmImage: 'windows-latest'  # 使用 Windows 构建环境
+
+steps:
+  # 安装 Flutter SDK
+  - script: |
+      git clone https://github.com/flutter/flutter.git -b stable
+      export PATH="$PATH:`pwd`/flutter/bin"
+      flutter --version  # 检查 Flutter 安装
+    displayName: 'Install Flutter SDK'
+
+  # 安装 Python 和依赖项
+  - task: UsePythonVersion@0
+    inputs:
+      versionSpec: '3.10'  # 选择 Python 版本
+      addToPath: true
+
+  - script: |
+      python -m pip install --upgrade pip
+      pip install flet  # 安装 Flet 和其他依赖
+      pip install -r requirements.txt
+    displayName: 'Install dependencies'
+
+  # 配置 Flutter 环境
+  - script: |
+      flutter doctor  # 检查 Flutter 环境是否正常
+    displayName: 'Flutter Environment Check'
+
+  # 使用 Flet 进行打包
+  - script: |
+      flet build windows # 打包 Flet 应用程序
+    displayName: 'Build Application'
+
+  # 复制并发布构建产物
+  - task: CopyFiles@2
+    inputs:
+      contents: '**/dist/**/*'  # 假设打包输出在 dist 文件夹中
+      targetFolder: '$(Build.ArtifactStagingDirectory)/drop'
+    displayName: 'Copy Build Artifacts'
+
+  - task: PublishBuildArtifacts@1
+    inputs:
+      pathToPublish: '$(Build.ArtifactStagingDirectory)/drop'
+      artifactName: 'windows_build'
+    displayName: 'Publish Artifacts'
