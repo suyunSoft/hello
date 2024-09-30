@@ -2,55 +2,64 @@ trigger:
   branches:
     include:
       - main  # 你想要触发构建的分支
+      -
+stages:
+- stage: winStage
+  pool:
+    vmImage: 'windows-latest'
+  dependsOn: []
+  displayName: Windows
+  jobs:
 
-pool:
-  vmImage: 'windows-latest'  # 使用 Windows 构建环境
+  - job: windowsJob
+    displayName: Windows
+    steps:
 
-steps:
-  # 下载并解压 Flutter SDK
-  - powershell: |
-      Invoke-WebRequest -Uri https://storage.googleapis.com/flutter_infra_release/releases/stable/windows/flutter_windows_3.13.0-stable.zip -OutFile flutter.zip
-      Expand-Archive flutter.zip -DestinationPath $(System.DefaultWorkingDirectory)\flutter
-      echo "Flutter SDK downloaded and extracted."
-    displayName: 'Download and Extract Flutter SDK'
+    # 安装 Flutter SDK
+    - task: FlutterInstall@0
+      displayName: "Install Flutter SDK"
+      inputs:
+        mode: 'auto'
+        channel: 'stable'
+        version: 'latest'
 
-  # 设置 Flutter 环境变量
-  - powershell: |
-      $env:Path += ";$(System.DefaultWorkingDirectory)\flutter\flutter\bin"
-      flutter --version  # 检查 Flutter 安装
-    displayName: 'Set Flutter Environment Variable'
+    # 安装 Python 和 Flet 依赖
+    - task: UsePythonVersion@0
+      inputs:
+        versionSpec: '3.10'  # 指定 Python 版本
+        addToPath: true
 
-  # 安装 Python 和依赖项
-  - task: UsePythonVersion@0
-    inputs:
-      versionSpec: '3.10'  # 选择 Python 版本
-      addToPath: true
+    - script: |
+        python -m pip install --upgrade pip
+        pip install flet  # 安装 Flet
+        pip install -r requirements.txt  # 如果有其他依赖，可以通过 requirements.txt 安装
+      displayName: 'Install Flet and dependencies'
 
-  - script: |
-      python -m pip install --upgrade pip
-      pip install flet  # 安装 Flet 和其他依赖
-      pip install -r requirements.txt
-    displayName: 'Install dependencies'
+    # 运行 Flutter Doctor 以确保 Flutter 环境正确配置
+    - task: FlutterCommand@0
+      displayName: "Run Flutter diagnostics"
+      inputs:
+        projectDirectory: '.'
+        arguments: 'doctor -v'
 
-  # 配置 Flutter 环境
-  - powershell: |
-      flutter doctor  # 检查 Flutter 环境是否正常
-    displayName: 'Flutter Environment Check'
+    # 使用 Flet 进行打包，生成 Windows 应用程序
+    - script: |
+        flet build windows  # 打包 Flet 应用程序为 Windows 可执行文件
+      displayName: 'Build Flet Application for Windows'
 
-  # 使用 Flet 进行打包
-  - powershell: |
-      flet build windows # 打包 Flet 应用程序
-    displayName: 'Build Application'
+    # 复制生成的 .exe 文件到发布目录
+    - task: CopyFiles@2
+      displayName: "Copy app to staging directory"
+      inputs:
+        sourceFolder: '$(Build.SourcesDirectory)/dist'
+        contents: '*.exe'
+        targetFolder: '$(Build.StagingDirectory)'
+        flattenFolders: true
 
-  # 复制并发布构建产物
-  - task: CopyFiles@2
-    inputs:
-      contents: '**/dist/**/*'  # 假设打包输出在 dist 文件夹中
-      targetFolder: '$(Build.ArtifactStagingDirectory)/drop'
-    displayName: 'Copy Build Artifacts'
-
-  - task: PublishBuildArtifacts@1
-    inputs:
-      pathToPublish: '$(Build.ArtifactStagingDirectory)/drop'
-      artifactName: 'windows_build'
-    displayName: 'Publish Artifacts'
+    # 发布 .exe 文件作为构建产物
+    - task: PublishBuildArtifacts@1
+      displayName: "Publish EXE file"
+      inputs:
+        PathtoPublish: '$(Build.ArtifactStagingDirectory)'
+        ArtifactName: 'Windows_EXE'
+        publishLocation: 'Container'
