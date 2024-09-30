@@ -1,7 +1,7 @@
 trigger:
   branches:
     include:
-      - main  # 你想要触发构建的分支
+      - main
       -
 stages:
 - stage: winStage
@@ -26,13 +26,12 @@ stages:
     # 安装 Python 和 Flet 依赖
     - task: UsePythonVersion@0
       inputs:
-        versionSpec: '3.10'  # 指定 Python 版本
+        versionSpec: '3.10'
         addToPath: true
 
     - script: |
         python -m pip install --upgrade pip
-        pip install flet  # 安装 Flet
-        pip install -r requirements.txt  # 如果有其他依赖，可以通过 requirements.txt 安装
+        pip install -r requirements.txt
       displayName: 'Install Flet and dependencies'
 
     # 运行 Flutter Doctor 以确保 Flutter 环境正确配置
@@ -44,7 +43,7 @@ stages:
 
     # 使用 Flet 进行打包，生成 Windows 应用程序
     - script: |
-        flet build windows  # 打包 Flet 应用程序为 Windows 可执行文件
+        flet build windows
       displayName: 'Build Flet Application for Windows'
 
     # 复制生成的 .exe 文件到发布目录
