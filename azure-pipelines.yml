@@ -7,12 +7,18 @@ pool:
   vmImage: 'windows-latest'  # 使用 Windows 构建环境
 
 steps:
-  # 安装 Flutter SDK
-  - script: |
-      git clone https://github.com/flutter/flutter.git -b stable
-      export PATH="$PATH:`pwd`/flutter/bin"
+  # 下载并解压 Flutter SDK
+  - powershell: |
+      Invoke-WebRequest -Uri https://storage.googleapis.com/flutter_infra_release/releases/stable/windows/flutter_windows_3.13.0-stable.zip -OutFile flutter.zip
+      Expand-Archive flutter.zip -DestinationPath $(System.DefaultWorkingDirectory)\flutter
+      echo "Flutter SDK downloaded and extracted."
+    displayName: 'Download and Extract Flutter SDK'
+
+  # 设置 Flutter 环境变量
+  - powershell: |
+      $env:Path += ";$(System.DefaultWorkingDirectory)\flutter\flutter\bin"
       flutter --version  # 检查 Flutter 安装
-    displayName: 'Install Flutter SDK'
+    displayName: 'Set Flutter Environment Variable'
 
   # 安装 Python 和依赖项
   - task: UsePythonVersion@0
@@ -27,12 +33,12 @@ steps:
     displayName: 'Install dependencies'
 
   # 配置 Flutter 环境
-  - script: |
+  - powershell: |
       flutter doctor  # 检查 Flutter 环境是否正常
     displayName: 'Flutter Environment Check'
 
   # 使用 Flet 进行打包
-  - script: |
+  - powershell: |
       flet build windows # 打包 Flet 应用程序
     displayName: 'Build Application'
 
