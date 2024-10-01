@@ -25,6 +25,7 @@ stages:
     - script: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
+        pip install pyinstall
       displayName: 'Install Flet and dependencies'
 
     # 使用 Flet 进行打包，生成 Windows 应用程序
