@@ -54,7 +54,7 @@ stages:
       displayName: "Copy app to staging directory"
       inputs:
         sourceFolder: '$(Build.SourcesDirectory)/build/windows'
-        contents: '*'
+        contents: '**'
         targetFolder: '$(Build.StagingDirectory)'
         flattenFolders: true
 
