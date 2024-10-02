@@ -53,8 +53,8 @@ stages:
     - task: CopyFiles@2
       displayName: "Copy app to staging directory"
       inputs:
-        sourceFolder: '$(Build.SourcesDirectory)/dist'
-        contents: '*.exe'
+        sourceFolder: '$(Build.SourcesDirectory)/build/windows'
+        contents: '*'
         targetFolder: '$(Build.StagingDirectory)'
         flattenFolders: true
 
