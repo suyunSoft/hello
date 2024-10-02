@@ -34,7 +34,7 @@ stages:
         pip install -r requirements.txt
       displayName: 'Install Flet and dependencies'
 
-      # 运行 Flutter Doctor 以确保 Flutter 环境正确配置
+    # 运行 Flutter Doctor 以确保 Flutter 环境正确配置
     - task: FlutterCommand@0
       displayName: "Run Flutter diagnostics"
       inputs:
@@ -48,15 +48,14 @@ stages:
           flet build windows --no-rich-output
       displayName: 'Build Flet Application for Windows'
 
-
-      # 复制生成的 .exe 文件到发布目录
+    # 复制生成的 .exe 文件到发布目录
     - task: CopyFiles@2
       displayName: "Copy app to staging directory"
       inputs:
         sourceFolder: '$(Build.SourcesDirectory)/build/windows'
         contents: '**'
-        targetFolder: '$(Build.StagingDirectory)'
-        flattenFolders: true
+        targetFolder: '$(Build.ArtifactStagingDirectory)'
+        flattenFolders: false  # 保留文件夹结构
 
     # 发布 .exe 文件作为构建产物
     - task: PublishBuildArtifacts@1
